@@ -11,7 +11,11 @@ exports.triggerCall = async (req, res) => {
       callSid: call.sid
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
+  console.error("TWILIO ERROR:", error);
+  res.status(500).json({ 
+    success: false,
+    message: error.message,
+    code: error.code
+  });
+}
 };
