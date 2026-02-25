@@ -6,7 +6,7 @@ exports.handleIncomingCall = async (req, res) => {
 
   twiml.gather({
     input: "speech",
-    action: "/api/voice/process",
+    action: `${process.env.BASE_URL}/api/voice/process`,
     method: "POST"
   }).say("Hello, this is Ahmed from our company. Is this a good time to talk?");
 
