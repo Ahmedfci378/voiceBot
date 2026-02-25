@@ -10,17 +10,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// app.use("/api/voice", voiceRoutes);
-app.all("/api/voice", (req, res) => {
-  res.type("text/xml");
-  res.send(`
-    <Response>
-      <Say voice="alice">
-        Webhook is working.
-      </Say>
-    </Response>
-  `);
-});
+app.use("/api/voice", voiceRoutes);
+// app.all("/api/voice", (req, res) => {
+//   res.type("text/xml");
+//   res.send(`
+//     <Response>
+//       <Say voice="alice">
+//         Webhook is working.
+//       </Say>
+//     </Response>
+//   `);
+// });
 app.use("/api/outbound", outboundRoutes);
 // Test Route
 app.get("/test", (req, res) => {
