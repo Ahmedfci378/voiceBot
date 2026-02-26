@@ -6,6 +6,8 @@ const outboundRoutes = require("./routes/outbound.routes");
 const mongoose = require("mongoose");
 
 const OpenAI = require("openai");
+const callRoutes = require("./routes/call.routes");
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -22,6 +24,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/voice", voiceRoutes);
+
+
+app.use("/api/calls", callRoutes);
+
 // app.all("/api/voice", (req, res) => {
 //   res.type("text/xml");
 //   res.send(`
