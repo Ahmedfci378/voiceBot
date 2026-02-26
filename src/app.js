@@ -5,6 +5,11 @@ const outboundRoutes = require("./routes/outbound.routes");
 
 const mongoose = require("mongoose");
 
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 
 const app = express();
