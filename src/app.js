@@ -3,10 +3,14 @@ const express = require("express");
 const voiceRoutes = require("./routes/voice.routes");
 const outboundRoutes = require("./routes/outbound.routes");
 
+const mongoose = require("mongoose");
+
 
 
 const app = express();
-
+  mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Error:", err));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
