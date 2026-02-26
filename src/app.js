@@ -33,27 +33,27 @@ app.use("/api/voice", voiceRoutes);
 //   `);
 // });
 
-app.get("/ai-test", async (req, res) => {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: "Say hello in one short sentence." }
-      ],
-    });
+// app.get("/ai-test", async (req, res) => {
+//   try {
+//     const completion = await openai.chat.completions.create({
+//       model: "gpt-4o-mini",
+//       messages: [
+//         { role: "user", content: "Say hello in one short sentence." }
+//       ],
+//     });
 
-    res.json({
-      success: true,
-      response: completion.choices[0].message.content
-    });
+//     res.json({
+//       success: true,
+//       response: completion.choices[0].message.content
+//     });
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
 
 app.use("/api/outbound", outboundRoutes);
 // Test Route
