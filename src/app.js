@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const voiceRoutes = require("./routes/voice.routes");
 const outboundRoutes = require("./routes/outbound.routes");
 
@@ -14,7 +15,21 @@ const openai = new OpenAI({
 });
 
 
+
 const app = express();
+
+/* ===============================
+   ✅ CORS FIX (ADDED)
+=================================*/
+app.use(cors({
+  origin: "https://voice-bot-front.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+app.options("*", cors()); // مهم للـ preflight
+
+/* =============================== */
 
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log("MongoDB Connected"))
