@@ -90,6 +90,13 @@ app.get("/ai-test", async (req, res) => {
   }
 });
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "VoiceBot Backend is running 🚀"
+  });
+});
+
 // Test Route
 app.get("/test", (req, res) => {
   res.send("Server is working");
