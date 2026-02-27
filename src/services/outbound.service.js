@@ -23,6 +23,12 @@ exports.makeOutboundCall = async (toNumber) => {
       throw new Error("BASE_URL is missing");
     }
 
+    console.log("ENV CHECK:", {
+  SID: process.env.TWILIO_ACCOUNT_SID,
+  TOKEN: process.env.TWILIO_AUTH_TOKEN,
+  PHONE: process.env.TWILIO_PHONE_NUMBER,
+  BASE: process.env.BASE_URL
+});
     const call = await client.calls.create({
       to: toNumber,
       from: process.env.TWILIO_PHONE_NUMBER,
