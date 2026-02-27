@@ -23,7 +23,7 @@ const app = express();
 =================================*/
 const allowedOrigins = [
   "https://voice-bot-front.vercel.app",
-  "http://localhost:3000"
+  "http://localhost:3001"
 ];
 
 app.use(cors({
