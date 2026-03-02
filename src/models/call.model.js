@@ -42,6 +42,12 @@ const callSchema = new mongoose.Schema({
     type: String,
     default: "in-progress",
   },
+  goal: {
+  type: String,
+  enum: ["residential", "investment"]
+},
+preferredLocation: String,
+budget: String,
 
   duration: Number,
   messages: [messageSchema],

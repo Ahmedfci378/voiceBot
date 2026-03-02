@@ -2,6 +2,7 @@ const Call = require("../models/call.model");
 const { scheduleCallback } = require("../utils/callback.scheduler");
 const memoryStore = require("../utils/memory.store");
 const OpenAI = require("openai");
+const { getProjectByGoal } = require("./project.service");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -59,7 +60,6 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
       return "معلش، ما سمعتش كلامك كويس. ممكن تعيده؟";
     }
 
-    // 1️⃣ Get or create call record
     let call = await Call.findOne({ callSid });
 
     if (!call) {
@@ -72,23 +72,19 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
       });
     }
 
-     if (!call.stage) {
+    if (!call.stage) {
       call.stage = "intro";
     }
 
-    // 2️⃣ Save user message
     call.messages.push({ role: "user", content: userSpeech });
-
     memoryStore.addMessage(callSid, "user", userSpeech);
 
-  
     let aiResponse;
 
-     /* ===============================
-       🎭 STAGE FLOW (First Priority)
+    /* ===============================
+       🎭 STAGE FLOW
     =================================*/
 
-    // 🔹 Intro Stage
     if (call.stage === "intro") {
       aiResponse =
         "مرحبًا، معك ممثل من شركة بالم هيلز، إحدى أكبر شركات التطوير العقاري في مصر منذ عام 1997. هل هذا وقت مناسب للحديث لثواني؟";
@@ -96,23 +92,20 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
       call.stage = "permission";
     }
 
-    // 🔹 Permission Stage
     else if (call.stage === "permission") {
 
       const intentData = await detectIntent(userSpeech);
       const intent = intentData.intent;
       const confidence = intentData.confidence || 0;
 
-      // لو وافق
       if (intent === "greeting" || intent === "booking" || confidence >= 0.7) {
 
         aiResponse =
           "رائع 👍 لدينا إطلاق جديد بمميزات خاصة وخطط سداد مرنة. هل تبحث عن سكن أم استثمار؟";
 
-        call.stage = "qualification";
+        call.stage = "launch";
       }
 
-      // لو رفض
       else if (intent === "rejection") {
 
         aiResponse =
@@ -122,16 +115,50 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
       }
     }
 
-    // 🔹 Callback Stage
+    /* ===============================
+       🚀 LAUNCH STAGE
+    =================================*/
+ else if (call.stage === "launch") {
+
+  const project = await getProjectByGoal(call.goal);
+
+  if (project) {
+
+    aiResponse = `
+رائع 👍 عندنا إطلاق جديد اسمه ${project.name} في ${project.location}.
+
+${project.description}
+
+السعر يبدأ من ${project.startingPrice.toLocaleString()} جنيه
+ويصل إلى ${project.maxPrice.toLocaleString()} جنيه.
+المقدم يبدأ من ${project.downPayment || "حسب النظام"}.
+التقسيط حتى ${project.installmentYears || "مرن"} سنوات.
+
+مناسب أكتر لو هدفك ${project.type === "residential" ? "سكن" : "استثمار"}.
+
+هل تحب أعرفك على التفاصيل الكاملة أو أشرح لك خطة السداد؟
+`;
+
+  } else {
+
+    aiResponse =
+      "عندنا أكثر من مشروع مميز حاليًا. تحب أعرف هدفك سكن ولا استثمار؟";
+  }
+
+  call.stage = "qualification";
+}
+
+    /* ===============================
+       🔄 CALLBACK STAGE
+    =================================*/
     else if (call.stage === "callback") {
 
-    aiResponse = "تمام 👍 تم تسجيل طلب المعاودة، وسأتواصل معك في الوقت المحدد.";
+      aiResponse =
+        "تمام 👍 تم تسجيل طلب المعاودة، وسأتواصل معك في الوقت المحدد.";
 
-    call.stage = "end";
+      call.stage = "end";
 
-    await call.save();
-
-    scheduleCallback(call);
+      scheduleCallback(call);
     }
 
     /* ===============================
@@ -170,7 +197,7 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
     }
 
     /* ===============================
-       🤖 AI Fallback (Smart Reply)
+       🤖 AI Fallback
     =================================*/
     if (!aiResponse) {
 
@@ -181,15 +208,11 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
         messages: [
           {
             role: "system",
-            content: `
-              أنت ممثل مبيعات محترف تعمل لصالح شركة بالم هيلز للتطوير العقاري.
-              تحدث باللغة العربية المصرية الطبيعية فقط.
-              كن ودودًا، مختصرًا، وجملة أو جملتين بحد أقصى.
-              لا تتكلم بأسلوب روبوتي.
-              اسأل دائمًا إذا كان هذا وقت مناسب للحديث.
-              إذا لم يكن الوقت مناسب، اطلب تحديد وقت للاتصال مرة أخرى.
-              إذا أبدى العميل اهتمامًا، اسأله عن الموقع والميزانية والهدف (سكن أم استثمار).
-              `
+                content: `
+    أنت ممثل مبيعات محترف تعمل لصالح شركة بالم هيلز للتطوير العقاري.
+    تحدث باللغة العربية المصرية الطبيعية فقط.
+    كن ودودًا ومختصرًا.
+    `
           },
           ...history,
         ],
@@ -202,7 +225,6 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
         "حصل خطأ بسيط. ممكن تعيد كلامك؟";
     }
 
-    // 5️⃣ Save assistant response
     call.messages.push({ role: "assistant", content: aiResponse });
 
     await call.save();
