@@ -19,3 +19,22 @@ exports.triggerCall = async (req, res) => {
   });
 }
 };
+
+
+
+exports.handleOutboundCall = async (req, res) => {
+  try {
+    const twiml = outboundService.getOutboundTwiml();
+
+    if (!twiml) {
+      return res.status(500).send("TwiML generation failed");
+    }
+
+    res.set("Content-Type", "text/xml");
+    res.status(200).send(twiml);
+
+  } catch (error) {
+    console.error("Outbound TwiML Error:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};

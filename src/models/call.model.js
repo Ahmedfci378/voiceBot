@@ -20,10 +20,29 @@ const callSchema = new mongoose.Schema({
   },
   from: String,
   to: String,
+
+  stage: {
+    type: String,
+    enum: [
+      "intro",
+      "permission",
+      "launch",
+      "qualification",
+      "callback",
+      "end"
+    ],
+    default: "intro"
+  },
+
+  callbackAt: {
+    type: Date
+  },
+
   status: {
     type: String,
     default: "in-progress",
   },
+
   duration: Number,
   messages: [messageSchema],
 }, { timestamps: true });

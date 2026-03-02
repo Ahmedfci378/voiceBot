@@ -1,4 +1,5 @@
 const Call = require("../models/call.model");
+const { scheduleCallback } = require("../utils/callback.scheduler");
 const memoryStore = require("../utils/memory.store");
 const OpenAI = require("openai");
 
@@ -12,11 +13,12 @@ const openai = new OpenAI({
 async function detectIntent(userSpeech) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
         content: `
-You are an intent classifier.
+You are a strict intent classification system.
 Return ONLY valid JSON in this format:
 {
   "intent": "one_of_the_intents",
@@ -54,7 +56,7 @@ Possible intents:
 exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
   try {
     if (!userSpeech || !userSpeech.trim()) {
-      return "Sorry, I didn't catch that. Could you repeat?";
+      return "معلش، ما سمعتش كلامك كويس. ممكن تعيده؟";
     }
 
     // 1️⃣ Get or create call record
@@ -65,8 +67,13 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
         callSid,
         from,
         to,
+        stage: "intro",
         messages: [],
       });
+    }
+
+     if (!call.stage) {
+      call.stage = "intro";
     }
 
     // 2️⃣ Save user message
@@ -74,58 +81,91 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
 
     memoryStore.addMessage(callSid, "user", userSpeech);
 
-    /* ===============================
-       🔎 Detect Intent
-    =================================*/
-    const intentData = await detectIntent(userSpeech);
-    const intent = intentData.intent;
-    const confidence = intentData.confidence || 0;
-
-    console.log("Detected Intent:", intent, "Confidence:", confidence);
-
-    // Optional: save intent in DB
-    call.messages[call.messages.length - 1].intent = intent;
-
+  
     let aiResponse;
+
+     /* ===============================
+       🎭 STAGE FLOW (First Priority)
+    =================================*/
+
+    // 🔹 Intro Stage
+    if (call.stage === "intro") {
+      aiResponse =
+        "مرحبًا، معك ممثل من شركة بالم هيلز، إحدى أكبر شركات التطوير العقاري في مصر منذ عام 1997. هل هذا وقت مناسب للحديث لثواني؟";
+
+      call.stage = "permission";
+    }
+
+    // 🔹 Permission Stage
+    else if (call.stage === "permission") {
+
+      const intentData = await detectIntent(userSpeech);
+      const intent = intentData.intent;
+      const confidence = intentData.confidence || 0;
+
+      // لو وافق
+      if (intent === "greeting" || intent === "booking" || confidence >= 0.7) {
+
+        aiResponse =
+          "رائع 👍 لدينا إطلاق جديد بمميزات خاصة وخطط سداد مرنة. هل تبحث عن سكن أم استثمار؟";
+
+        call.stage = "qualification";
+      }
+
+      // لو رفض
+      else if (intent === "rejection") {
+
+        aiResponse =
+          "تمام جدًا. متى يكون الوقت المناسب لأعاود الاتصال بك؟";
+
+        call.stage = "callback";
+      }
+    }
+
+    // 🔹 Callback Stage
+    else if (call.stage === "callback") {
+
+    aiResponse = "تمام 👍 تم تسجيل طلب المعاودة، وسأتواصل معك في الوقت المحدد.";
+
+    call.stage = "end";
+
+    await call.save();
+
+    scheduleCallback(call);
+    }
 
     /* ===============================
        🎯 Intent-Based Responses
     =================================*/
-    if (confidence >= 0.7) {
+    if (!aiResponse) {
 
-      switch (intent) {
+      const intentData = await detectIntent(userSpeech);
+      const intent = intentData.intent;
+      const confidence = intentData.confidence || 0;
 
-        case "greeting":
-          aiResponse = "Hi there! How can I help you today?";
-          break;
+      if (confidence >= 0.7) {
 
-        case "pricing":
-          aiResponse =
-            "Our pricing starts from $100 per month depending on your needs. Would you like me to explain the plans?";
-          break;
+        switch (intent) {
 
-        case "booking":
-          aiResponse =
-            "Great! I'd love to schedule that for you. What time works best?";
-          break;
+          case "pricing":
+            aiResponse =
+              "الأسعار تختلف حسب المشروع ونظام السداد. هل تحب أشرح لك التفاصيل؟";
+            break;
 
-        case "objection":
-          aiResponse =
-            "I totally understand. May I ask what concerns you the most so I can clarify?";
-          break;
+          case "objection":
+            aiResponse =
+              "أتفهم قلقك تمامًا. ممكن أعرف السبب عشان أوضح لك الصورة؟";
+            break;
 
-        case "rejection":
-          aiResponse =
-            "No worries at all. If you ever change your mind, we’d be happy to help.";
-          break;
+          case "callback_request":
+            aiResponse =
+              "بالتأكيد 👍 إمتى يكون الوقت المناسب نعاود الاتصال؟";
+            call.stage = "callback";
+            break;
 
-        case "callback_request":
-          aiResponse =
-            "Sure, I can arrange a callback. When would be a good time to reach you?";
-          break;
-
-        default:
-          break;
+          default:
+            break;
+        }
       }
     }
 
@@ -141,18 +181,25 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a friendly human sales agent. Speak naturally, keep responses short (maximum 2 sentences), and sound human."
+            content: `
+              أنت ممثل مبيعات محترف تعمل لصالح شركة بالم هيلز للتطوير العقاري.
+              تحدث باللغة العربية المصرية الطبيعية فقط.
+              كن ودودًا، مختصرًا، وجملة أو جملتين بحد أقصى.
+              لا تتكلم بأسلوب روبوتي.
+              اسأل دائمًا إذا كان هذا وقت مناسب للحديث.
+              إذا لم يكن الوقت مناسب، اطلب تحديد وقت للاتصال مرة أخرى.
+              إذا أبدى العميل اهتمامًا، اسأله عن الموقع والميزانية والهدف (سكن أم استثمار).
+              `
           },
           ...history,
         ],
-        temperature: 0.7,
-        max_tokens: 120,
+        temperature: 0.6,
+        max_tokens: 80,
       });
 
       aiResponse =
         completion.choices?.[0]?.message?.content?.trim() ||
-        "Sorry, something went wrong.";
+        "حصل خطأ بسيط. ممكن تعيد كلامك؟";
     }
 
     // 5️⃣ Save assistant response
@@ -166,6 +213,6 @@ exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
 
   } catch (error) {
     console.error("AI ERROR:", error.message);
-    return "I'm having a small technical issue. Could you try again?";
+    return "حصلت مشكلة تقنية بسيطة. حاول مرة أخرى من فضلك.";
   }
 };
