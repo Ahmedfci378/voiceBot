@@ -5,7 +5,7 @@ const Project = require("../models/project.model");
 // Get all active projects
 router.get("/", async (req, res) => {
   try {
-    const projects = await Project.find({ active: true });
+    const projects = await Project.find();
 
     res.json({
       success: true,
