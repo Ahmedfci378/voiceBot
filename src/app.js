@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const voiceRoutes = require("./routes/voice.routes");
 const outboundRoutes = require("./routes/outbound.routes");
+const projectsRoutes = require("./routes/projects.routes");
 
 const mongoose = require("mongoose");
 
@@ -56,6 +57,7 @@ app.use("/api/outbound", outboundRoutes);
 
 
 app.use("/api/calls", callRoutes);
+app.use("/api/projects",projectsRoutes);
 
 // app.all("/api/voice", (req, res) => {
 //   res.type("text/xml");
