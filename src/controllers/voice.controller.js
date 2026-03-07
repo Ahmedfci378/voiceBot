@@ -8,12 +8,14 @@ exports.handleIncomingCall = async (req, res) => {
     const twiml = new twilio.twiml.VoiceResponse();
 
     twiml.gather({
-      input: "speech",
-      language: "ar-EG", // مهم جدًا عشان عربي
-      action: `${process.env.BASE_URL}/api/voice/process`,
-      method: "POST",
-      speechTimeout: "auto",
-        timeout: 10
+   input: "speech",
+  language: "ar-EG",
+  speechModel: "phone_call",
+  enhanced: true,
+  timeout: 15,
+  speechTimeout: "auto",
+  action: `${process.env.BASE_URL}/api/voice/process`,
+  method: "POST"
 
     }).say(
       { language: "ar-EG", voice: "alice" },
