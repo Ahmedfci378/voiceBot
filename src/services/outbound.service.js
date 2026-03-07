@@ -38,7 +38,7 @@ exports.makeOutboundCall = async (toNumber) => {
       from: process.env.TWILIO_PHONE_NUMBER,
 
       // Twilio هيطلب TwiML من هنا لما المكالمة تبدأ
-      url: `${process.env.BASE_URL}/api/outbound`,
+      url: `${process.env.BASE_URL}/api/voice`,
 
       statusCallback: `${process.env.BASE_URL}/api/voice/status`,
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
