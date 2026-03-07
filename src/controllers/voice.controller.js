@@ -4,29 +4,30 @@ const Call = require("../models/call.model");
 const memoryStore = require("../utils/memory.store");
 
 
-
+// ==============================
+// HANDLE INCOMING CALL
+// ==============================
 exports.handleIncomingCall = async (req, res) => {
   try {
     const twiml = new twilio.twiml.VoiceResponse();
 
-    twiml.gather({
-   input: "speech",
-  language: "ar-EG",
-  speechModel: "phone_call",
-  enhanced: true,
-  timeout: 15,
-  speechTimeout: "auto",
-  action: `${process.env.BASE_URL}/api/voice/process`,
-  method: "POST"
+    const gather = twiml.gather({
+      input: "speech",
+      language: "ar-EG",
+      speechModel: "phone_call",
+      enhanced: true,
+      timeout: 15,
+      speechTimeout: "auto",
+      action: `${process.env.BASE_URL}/api/voice/process`,
+      method: "POST"
+    });
 
-    }).say(
-      { language: "ar-EG", voice: "alice" },
-  "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟" 
-   );
-        twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+    gather.say(
+      { voice: "alice", language: "ar-EG" },
+      "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟"
+    );
 
-    res.type("text/xml");
-    res.send(twiml.toString());
+    res.type("text/xml").send(twiml.toString());
 
   } catch (error) {
     console.error(error);
@@ -34,17 +35,32 @@ exports.handleIncomingCall = async (req, res) => {
   }
 };
 
+
+// ==============================
+// PROCESS SPEECH
+// ==============================
 exports.processSpeech = async (req, res) => {
   console.log("PROCESS SPEECH HIT");
+
   try {
     const { SpeechResult, CallSid, From, To } = req.body;
 
+    const twiml = new twilio.twiml.VoiceResponse();
+
     if (!SpeechResult) {
-      const twiml = new twilio.twiml.VoiceResponse();
-      twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+      const gather = twiml.gather({
+        input: "speech",
+        language: "ar-EG",
+        action: `${process.env.BASE_URL}/api/voice/process`,
+        method: "POST"
+      });
+
+      gather.say("ممكن تعيد كلامك؟");
+
       return res.type("text/xml").send(twiml.toString());
     }
 
+    // 🔥 هنا AI
     const aiResponse = await voiceService.handleUserMessage(
       CallSid,
       From,
@@ -52,14 +68,25 @@ exports.processSpeech = async (req, res) => {
       SpeechResult
     );
 
-    const twiml = new twilio.twiml.VoiceResponse();
+    // AI يرد
+    twiml.say(
+      { voice: "alice", language: "ar-EG" },
+      aiResponse
+    );
 
-    twiml.say({
-      voice: "alice",
-      language: "ar-EG"
-    }, aiResponse);
+    // 🔁 نرجع Gather جديد (بدون redirect)
+    const gather = twiml.gather({
+      input: "speech",
+      language: "ar-EG",
+      speechModel: "phone_call",
+      enhanced: true,
+      timeout: 15,
+      speechTimeout: "auto",
+      action: `${process.env.BASE_URL}/api/voice/process`,
+      method: "POST"
+    });
 
-    twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+    gather.say("هل تحب أكمل معاك؟");
 
     res.type("text/xml").send(twiml.toString());
 
@@ -67,12 +94,20 @@ exports.processSpeech = async (req, res) => {
     console.error("PROCESS ERROR:", error);
 
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+
+    twiml.say(
+      { voice: "alice", language: "ar-EG" },
+      "حصل خطأ مؤقت. حاول مرة أخرى."
+    );
 
     res.type("text/xml").send(twiml.toString());
   }
 };
 
+
+// ==============================
+// CALL STATUS
+// ==============================
 exports.handleCallStatus = async (req, res) => {
   const { CallSid, CallStatus, CallDuration } = req.body;
 
