@@ -8,7 +8,8 @@ const memoryStore = require("../utils/memory.store");
 // HANDLE INCOMING CALL
 // ==============================
 exports.handleIncomingCall = async (req, res) => {
-  log("VOICE HIT");
+  console.log("VOICE HOT");
+  
   try {
     const twiml = new twilio.twiml.VoiceResponse();
 
