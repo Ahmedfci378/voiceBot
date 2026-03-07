@@ -44,95 +44,74 @@ exports.handleIncomingCall = (req, res) => {
 };
 
 
-exports.processSpeech = (req, res) => {
-  console.log("PROCESS SPEECH HIT");
-
-  const twiml = new (require("twilio")).twiml.VoiceResponse();
-
-  twiml.say(
-    { voice: "alice", language: "en-US" },
-    "I received your speech successfully."
-  );
-
-  const gather = twiml.gather({
-    input: "speech",
-    action: `${process.env.BASE_URL}/api/voice/process`,
-    method: "POST",
-    timeout: 10
-  });
-
-  gather.say("You can speak again.");
-
-  res.type("text/xml").send(twiml.toString());
-};
 
 // ==============================
 // PROCESS SPEECH
 // ==============================
-// exports.processSpeech = async (req, res) => {
-//   console.log("PROCESS SPEECH HIT");
+exports.processSpeech = async (req, res) => {
+  console.log("PROCESS SPEECH HIT");
+    let aiResponse = "ممتاز، خلينا نكمل.";
+  try {
+    const { SpeechResult, CallSid, From, To } = req.body;
 
-//   try {
-//     const { SpeechResult, CallSid, From, To } = req.body;
+    const twiml = new twilio.twiml.VoiceResponse();
 
-//     const twiml = new twilio.twiml.VoiceResponse();
+    if (!SpeechResult) {
+      const gather = twiml.gather({
+        input: "speech",
+        language: "ar-EG",
+        action: `${process.env.BASE_URL}/api/voice/process`,
+        method: "POST"
+      });
 
-//     if (!SpeechResult) {
-//       const gather = twiml.gather({
-//         input: "speech",
-//         language: "ar-EG",
-//         action: `${process.env.BASE_URL}/api/voice/process`,
-//         method: "POST"
-//       });
+      gather.say("ممكن تعيد كلامك؟");
 
-//       gather.say("ممكن تعيد كلامك؟");
+      return res.type("text/xml").send(twiml.toString());
+    }
 
-//       return res.type("text/xml").send(twiml.toString());
-//     }
+    // 🔥 هنا AI
+     aiResponse = await voiceService.handleUserMessage(
+      CallSid,
+      From,
+      To,
+      SpeechResult
+    );
 
-//     // 🔥 هنا AI
-//     const aiResponse = await voiceService.handleUserMessage(
-//       CallSid,
-//       From,
-//       To,
-//       SpeechResult
-//     );
+    // AI يرد
+    twiml.say(
+      { voice: "alice", language: "ar-EG" },
+      aiResponse
+    );
 
-//     // AI يرد
-//     twiml.say(
-//       { voice: "alice", language: "ar-EG" },
-//       aiResponse
-//     );
+    // 🔁 نرجع Gather جديد (بدون redirect)
+    const gather = twiml.gather({
+      input: "speech",
+      language: "ar-EG",
+      speechModel: "phone_call",
+      enhanced: true,
+      timeout: 15,
+      speechTimeout: "auto",
+      action: `${process.env.BASE_URL}/api/voice/process`,
+      method: "POST"
+    });
 
-//     // 🔁 نرجع Gather جديد (بدون redirect)
-//     const gather = twiml.gather({
-//       input: "speech",
-//       language: "ar-EG",
-//       speechModel: "phone_call",
-//       enhanced: true,
-//       timeout: 15,
-//       speechTimeout: "auto",
-//       action: `${process.env.BASE_URL}/api/voice/process`,
-//       method: "POST"
-//     });
+    gather.say("هل تحب أكمل معاك؟");
 
-//     gather.say("هل تحب أكمل معاك؟");
+    res.type("text/xml").send(twiml.toString());
 
-//     res.type("text/xml").send(twiml.toString());
+  } catch (error) {
+    console.error("PROCESS ERROR:", error);
 
-//   } catch (error) {
-//     console.error("PROCESS ERROR:", error);
+    const twiml = new twilio.twiml.VoiceResponse();
 
-//     const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say(
+      { voice: "alice", language: "ar-EG" },
+      "حصل خطأ مؤقت. حاول مرة أخرى."
+    );
 
-//     twiml.say(
-//       { voice: "alice", language: "ar-EG" },
-//       "حصل خطأ مؤقت. حاول مرة أخرى."
-//     );
-
-//     res.type("text/xml").send(twiml.toString());
-//   }
-// };
+    res.type("text/xml").send(twiml.toString());
+  }
+};
 
 
 // ==============================
