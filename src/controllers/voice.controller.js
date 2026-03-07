@@ -3,34 +3,48 @@ const voiceService = require("../services/voice.service");
 const Call = require("../models/call.model");
 const memoryStore = require("../utils/memory.store");
 
-exports.handleIncomingCall = async (req, res) => {
-  try {
-    const twiml = new twilio.twiml.VoiceResponse();
+exports.handleIncomingCall = (req, res) => {
+  console.log("VOICE HIT");
 
-    twiml.gather({
-   input: "speech",
-  language: "ar-EG",
-  speechModel: "phone_call",
-  enhanced: true,
-  timeout: 15,
-  speechTimeout: "auto",
-  action: `${process.env.BASE_URL}/api/voice/process`,
-  method: "POST"
+  const twiml = new twilio.twiml.VoiceResponse();
 
-    }).say(
-      { language: "ar-EG", voice: "alice" },
-  "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟" 
-   );
-        twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+  // 🔥 رسالة اختبار ثابتة
+  twiml.say(
+    { voice: "alice", language: "ar-EG" },
+    "اختبار الصوت. لو سمعتني يبقى كل شيء يعمل بشكل صحيح."
+  );
 
-    res.type("text/xml");
-    res.send(twiml.toString());
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error");
-  }
+  res.type("text/xml").send(twiml.toString());
 };
+
+// exports.handleIncomingCall = async (req, res) => {
+//   try {
+//     const twiml = new twilio.twiml.VoiceResponse();
+
+//     twiml.gather({
+//    input: "speech",
+//   language: "ar-EG",
+//   speechModel: "phone_call",
+//   enhanced: true,
+//   timeout: 15,
+//   speechTimeout: "auto",
+//   action: `${process.env.BASE_URL}/api/voice/process`,
+//   method: "POST"
+
+//     }).say(
+//       { language: "ar-EG", voice: "alice" },
+//   "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟" 
+//    );
+//         twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+
+//     res.type("text/xml");
+//     res.send(twiml.toString());
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Error");
+//   }
+// };
 
 exports.processSpeech = async (req, res) => {
   console.log("PROCESS SPEECH HIT");
