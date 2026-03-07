@@ -55,6 +55,8 @@ Possible intents:
    🎯 Main Handler
 =================================*/
 exports.handleUserMessage = async (callSid, from, to, userSpeech) => {
+
+  console.log("AI FUNCTION START");
   try {
     if (!userSpeech || !userSpeech.trim()) {
       return "معلش، ما سمعتش كلامك كويس. ممكن تعيده؟";
