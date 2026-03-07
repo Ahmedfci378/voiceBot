@@ -10,9 +10,9 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-// ==============================
+// =====================
 // MAKE OUTBOUND CALL
-// ==============================
+// =====================
 exports.makeOutboundCall = async (toNumber) => {
   try {
     if (!toNumber) {
@@ -37,7 +37,7 @@ exports.makeOutboundCall = async (toNumber) => {
       to: toNumber,
       from: process.env.TWILIO_PHONE_NUMBER,
 
-      // Twilio سيطلب TwiML من هنا بعد ما المكالمة تتعمل
+      // Twilio هيطلب TwiML من هنا لما المكالمة تبدأ
       url: `${process.env.BASE_URL}/api/outbound`,
 
       statusCallback: `${process.env.BASE_URL}/api/voice/status`,
@@ -55,17 +55,17 @@ exports.makeOutboundCall = async (toNumber) => {
   }
 };
 
-// ==============================
-// GENERATE OUTBOUND TWIML
-// ==============================
+// =====================
+// GENERATE TWIML
+// =====================
 exports.getOutboundTwiml = () => {
   try {
     const twiml = new VoiceResponse();
 
-    // يبدأ Media Stream علشان تبعت الصوت للـ AI
-    twiml.connect().stream({
-      url: `${process.env.BASE_URL.replace("https", "wss")}/media-stream`
-    });
+    twiml.say(
+      { voice: "alice", language: "en-US" },
+      "Hello, this is your AI assistant calling."
+    );
 
     return twiml.toString();
 
