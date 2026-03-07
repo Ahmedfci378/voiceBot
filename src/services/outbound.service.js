@@ -1,4 +1,5 @@
 const twilio = require("twilio");
+const VoiceResponse = require("twilio").twiml.VoiceResponse;
 
 if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
   throw new Error("Twilio credentials are missing");
@@ -9,6 +10,9 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+// ==============================
+// MAKE OUTBOUND CALL
+// ==============================
 exports.makeOutboundCall = async (toNumber) => {
   try {
     if (!toNumber) {
@@ -24,16 +28,16 @@ exports.makeOutboundCall = async (toNumber) => {
     }
 
     console.log("ENV CHECK:", {
-  SID: process.env.TWILIO_ACCOUNT_SID,
-  TOKEN: process.env.TWILIO_AUTH_TOKEN,
-  PHONE: process.env.TWILIO_PHONE_NUMBER,
-  BASE: process.env.BASE_URL
-});
+      SID: process.env.TWILIO_ACCOUNT_SID,
+      PHONE: process.env.TWILIO_PHONE_NUMBER,
+      BASE: process.env.BASE_URL
+    });
+
     const call = await client.calls.create({
       to: toNumber,
       from: process.env.TWILIO_PHONE_NUMBER,
 
-      // مهم جدًا يكون endpoint مخصص للـ outbound مش نفس inbound
+      // Twilio سيطلب TwiML من هنا بعد ما المكالمة تتعمل
       url: `${process.env.BASE_URL}/api/outbound`,
 
       statusCallback: `${process.env.BASE_URL}/api/voice/status`,
@@ -46,17 +50,27 @@ exports.makeOutboundCall = async (toNumber) => {
     return call;
 
   } catch (error) {
-    console.error("Outbound Error:", error.message);
+    console.error("Outbound Error:", error);
     throw error;
   }
 };
 
+// ==============================
+// GENERATE OUTBOUND TWIML
+// ==============================
 exports.getOutboundTwiml = () => {
-  const twiml = new VoiceResponse();
+  try {
+    const twiml = new VoiceResponse();
 
-  twiml.connect().stream({
-    url: `${process.env.BASE_URL}/media-stream`
-  });
+    // يبدأ Media Stream علشان تبعت الصوت للـ AI
+    twiml.connect().stream({
+      url: `${process.env.BASE_URL.replace("https", "wss")}/media-stream`
+    });
 
-  return twiml.toString();
+    return twiml.toString();
+
+  } catch (error) {
+    console.error("TwiML generation error:", error);
+    return null;
+  }
 };
