@@ -50,3 +50,13 @@ exports.makeOutboundCall = async (toNumber) => {
     throw error;
   }
 };
+
+exports.getOutboundTwiml = () => {
+  const twiml = new VoiceResponse();
+
+  twiml.connect().stream({
+    url: `${process.env.BASE_URL}/media-stream`
+  });
+
+  return twiml.toString();
+};
