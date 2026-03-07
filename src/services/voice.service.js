@@ -2,7 +2,7 @@ const Call = require("../models/call.model");
 const { scheduleCallback } = require("../utils/callback.scheduler");
 const memoryStore = require("../utils/memory.store");
 const OpenAI = require("openai");
-const { getProjectByGoal } = require("./project.service");
+const { getProjectsByGoal } = require("./project.service");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
