@@ -13,7 +13,7 @@ exports.handleIncomingCall = (req, res) => {
     { voice: "alice", language: "ar-EG" },
     "اختبار الصوت. لو سمعتني يبقى كل شيء يعمل بشكل صحيح."
   );
-
+twiml.pause({ length: 30 });
   res.type("text/xml").send(twiml.toString());
 };
 
