@@ -32,6 +32,9 @@ exports.handleIncomingCall = (req, res) => {
       "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟"
     );
 
+      twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+
+
     res.type("text/xml").send(twiml.toString());
 
   } catch (error) {
