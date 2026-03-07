@@ -8,53 +8,37 @@ const memoryStore = require("../utils/memory.store");
 // HANDLE INCOMING CALL
 // ==============================
 
-exports.handleIncomingCall = (req, res) => {
-  console.log("VOICE HIT");
 
+
+exports.handleIncomingCall = (req, res) => {
+  console.log("VOICE HiT");
+  
   try {
     const twiml = new twilio.twiml.VoiceResponse();
 
-    twiml.say("System test working.");
+    const gather = twiml.gather({
+      input: "speech",
+      language: "ar-EG",
+      speechModel: "phone_call",
+      enhanced: true,
+      timeout: 15,
+      speechTimeout: "auto",
+      action: `${process.env.BASE_URL}/api/voice/process`,
+      method: "POST"
+    });
 
-    res.set("Content-Type", "text/xml");
-    res.status(200).send(twiml.toString());
+    gather.say(
+      { voice: "alice", language: "ar-EG" },
+      "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟"
+    );
 
-  } catch (err) {
-    console.error("VOICE ERROR:", err);
+    res.type("text/xml").send(twiml.toString());
 
-    res.status(500).send("ERROR");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error");
   }
 };
-
-// exports.handleIncomingCall = async (req, res) => {
-//   console.log("VOICE HiT");
-  
-//   try {
-//     const twiml = new twilio.twiml.VoiceResponse();
-
-//     const gather = twiml.gather({
-//       input: "speech",
-//       language: "ar-EG",
-//       speechModel: "phone_call",
-//       enhanced: true,
-//       timeout: 15,
-//       speechTimeout: "auto",
-//       action: `${process.env.BASE_URL}/api/voice/process`,
-//       method: "POST"
-//     });
-
-//     gather.say(
-//       { voice: "alice", language: "ar-EG" },
-//       "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟"
-//     );
-
-//     res.type("text/xml").send(twiml.toString());
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send("Error");
-//   }
-// };
 
 
 // ==============================
