@@ -33,6 +33,7 @@ exports.handleIncomingCall = async (req, res) => {
 };
 
 exports.processSpeech = async (req, res) => {
+  console.log("PROCESS SPEECH HIT");
   try {
     const { SpeechResult, CallSid, From, To } = req.body;
 
