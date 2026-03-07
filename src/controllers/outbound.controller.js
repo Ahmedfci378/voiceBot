@@ -23,6 +23,8 @@ exports.triggerCall = async (req, res) => {
 
 
 exports.handleOutboundCall = async (req, res) => {
+  console.log("TWIML ENDPOINT HIT");
+  
   try {
     const twiml = outboundService.getOutboundTwiml();
 
