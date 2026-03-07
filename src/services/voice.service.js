@@ -12,6 +12,7 @@ const openai = new OpenAI({
    🧠 Intent Detection Function
 =================================*/
 async function detectIntent(userSpeech) {
+  try {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     response_format: { type: "json_object" },
@@ -44,7 +45,7 @@ Possible intents:
     temperature: 0,
   });
 
-  try {
+  
     return JSON.parse(completion.choices[0].message.content);
   } catch {
     return { intent: "general_question", confidence: 0.5 };
