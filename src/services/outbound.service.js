@@ -58,19 +58,19 @@ exports.makeOutboundCall = async (toNumber) => {
 // =====================
 // GENERATE TWIML
 // =====================
-// exports.getOutboundTwiml = () => {
-//   try {
-//     const twiml = new VoiceResponse();
+exports.getOutboundTwiml = () => {
+  try {
+    const twiml = new VoiceResponse();
 
-//     twiml.say(
-//       { voice: "alice", language: "en-US" },
-//       "Hello, this is your AI assistant calling."
-//     );
+    twiml.say(
+      { voice: "alice", language: "en-US" },
+      "Hello, this is your AI assistant calling."
+    );
 
-//     return twiml.toString();
+    return twiml.toString();
 
-//   } catch (error) {
-//     console.error("TwiML generation error:", error);
-//     return null;
-//   }
-// };
+  } catch (error) {
+    console.error("TwiML generation error:", error);
+    return null;
+  }
+};
