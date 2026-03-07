@@ -6,7 +6,7 @@ const memoryStore = require("../utils/memory.store");
 exports.handleIncomingCall = async (req, res) => {
   try {
     const twiml = new twilio.twiml.VoiceResponse();
-    
+
     twiml.gather({
    input: "speech",
   language: "ar-EG",
@@ -53,7 +53,7 @@ exports.processSpeech = async (req, res) => {
     const twiml = new twilio.twiml.VoiceResponse();
 
     twiml.say({
-      voice: "Polly.Ahmed",
+      voice: "alice",
       language: "ar-EG"
     }, aiResponse);
 
