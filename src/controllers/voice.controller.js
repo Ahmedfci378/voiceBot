@@ -13,7 +13,7 @@ exports.handleIncomingCall = async (req, res) => {
       action: `${process.env.BASE_URL}/api/voice/process`,
       method: "POST",
       speechTimeout: "auto",
-        timeout: 5
+        timeout: 10
 
     }).say(
       { language: "ar-EG", voice: "alice" },
