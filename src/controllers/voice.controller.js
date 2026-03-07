@@ -33,24 +33,40 @@ exports.handleIncomingCall = async (req, res) => {
 };
 
 exports.processSpeech = async (req, res) => {
-  console.log("PROCESS SPEECH HIT");
   try {
     const { SpeechResult, CallSid, From, To } = req.body;
+
+    if (!SpeechResult) {
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+      return res.type("text/xml").send(twiml.toString());
+    }
 
     const aiResponse = await voiceService.handleUserMessage(
       CallSid,
       From,
       To,
-      SpeechResult || ""
+      SpeechResult
     );
 
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say(aiResponse);
+
+    twiml.say({
+      voice: "Polly.Ahmed",
+      language: "ar-EG"
+    }, aiResponse);
+
     twiml.redirect(`${process.env.BASE_URL}/api/voice`);
-    res.type("text/xml");
-    res.send(twiml.toString());
+
+    res.type("text/xml").send(twiml.toString());
+
   } catch (error) {
-    console.error(error);
+    console.error("PROCESS ERROR:", error);
+
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.redirect(`${process.env.BASE_URL}/api/voice`);
+
+    res.type("text/xml").send(twiml.toString());
   }
 };
 
