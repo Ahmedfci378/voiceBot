@@ -19,6 +19,7 @@ exports.handleIncomingCall = async (req, res) => {
       { language: "ar-EG", voice: "alice" },
   "مرحبًا، معك ممثل من شركة بالم هيلز. هل هذا وقت مناسب للحديث لثواني فقط؟" 
    );
+        twiml.redirect(`${process.env.BASE_URL}/api/voice`);
 
     res.type("text/xml");
     res.send(twiml.toString());
@@ -30,6 +31,7 @@ exports.handleIncomingCall = async (req, res) => {
 };
 
 exports.processSpeech = async (req, res) => {
+  console.log("PROCESS SPEECH HIT");
   try {
     const { SpeechResult, CallSid, From, To } = req.body;
 
