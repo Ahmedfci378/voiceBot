@@ -183,46 +183,44 @@ else if (stage === "followup") {
 
   const text = String(message).trim().toLowerCase();
 
+  // 🔹 إنهاء
   if (text.includes("لا") || text.includes("شكرا") || text.includes("انهي")) {
     response = "تمام 👍 سعيد بالتواصل معاك. نتكلم قريبًا 👋";
-    memory.setStage(sessionId, "end"); // ينهي الجلسة
-  } else {
-    response = "هل تحب تفاصيل أكتر عن المشاريع ولا نحجز مكالمة؟";
-    memory.setStage(sessionId, "qualification"); // مرحلة انتظار رد المستخدم
+    memory.setStage(sessionId, "end");
+  }
+
+  // 🔹 حجز مكالمة
+  else if (text.includes("مكالمة") || text.includes("حجز")) {
+    response = "تمام 👍 إمتى يكون الوقت المناسب نكلمك؟";
+    memory.setStage(sessionId, "callback"); // 👈 Stage جديدة
+  }
+
+  // 🔹 تفاصيل أكتر
+  else if (text.includes("تفاصيل") || text.includes("أكتر")) {
+    response = "حاضر 👌 هكمل معاك بالتفاصيل...";
+    memory.setStage(sessionId, "qualification"); 
+    // أو تقدر تخليها stage جديدة لو عايز flow أعمق
+  }
+
+  // 🔹 أي رد تاني
+  else {
+    response = "تحب تفاصيل أكتر عن المشروع ولا نحجز مكالمة؟";
   }
 }
 
-    /* =========================
-       🎭 STAGE: LAUNCH
+/* =========================
+       🎭 STAGE:CALLBACK
     ==========================*/
-//     else if (stage === "launch") {
 
-//       const goal = memory.getGoal(sessionId) || "residential";
+else if (stage === "callback") {
 
-//       const projects = await getProjectByGoal(goal);
+  const text = String(message).trim().toLowerCase();
 
-//       if (projects && projects.length > 0) {
+  response = "تمام 👍 تم تسجيل طلب المكالمة. هنتواصل معاك قريبًا.";
 
-//         const project = projects[0];
+  memory.setStage(sessionId, "end");
+}
 
-//         response = `
-// 🏗 المشروع: ${project.name}
-// 📍 الموقع: ${project.location}
-
-// 💰 يبدأ من ${project.startingPrice?.toLocaleString() || "غير محدد"} جنيه
-// 📆 تقسيط حتى ${project.installmentYears || "مرن"} سنوات.
-// `;
-
-//         // نرجع للـ qualification عشان يسمح بسؤال جديد
-//         memory.setStage(sessionId, "qualification");
-
-//       } else {
-
-//         response = "حاليًا لا يوجد مشاريع متاحة.";
-
-//         memory.setStage(sessionId, "qualification");
-//       }
-//     }
 
     /* =========================
        🎭 STAGE: END
