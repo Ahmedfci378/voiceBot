@@ -7,30 +7,55 @@ exports.getActiveProjects = async () => {
 exports.getProjectByGoal = async (goal, prefs = {}) => {
 
   const query = {
-    type: goal,
+    goalType: goal,
     status: "available"
   };
 
-  // فلترة حسب المنطقة
+  // map للمناطق
+  const locationMap = {
+    "اكتوبر": "6th of October",
+    "6 اكتوبر": "6th of October",
+    "october": "6th of October",
+    "التجمع": "New Cairo",
+    "القاهرة الجديدة": "New Cairo",
+    "نيو كايرو": "New Cairo",
+    "اسكندرية": "Alexandria",
+    "الاسكندرية": "Alexandria"
+  };
+
   if (prefs.location) {
-    query.location = { $regex: prefs.location, $options: "i" };
+
+    const mappedLocation =
+      locationMap[prefs.location] || prefs.location;
+
+    query.location = { $regex: mappedLocation, $options: "i" };
   }
 
-  // فلترة حسب الميزانية
   if (prefs.budget) {
+
     const budget = parseInt(prefs.budget.replace(/\D/g, ""));
+
     if (!isNaN(budget)) {
-      query.startingPrice = { $lte: budget };
+
+      query.$and = [
+        { startingPrice: { $lte: budget } },
+        { maxPrice: { $gte: budget } }
+      ];
+
     }
   }
 
-  // فلترة حسب مدة التقسيط
   if (prefs.duration) {
+
     const duration = parseInt(prefs.duration.replace(/\D/g, ""));
+
     if (!isNaN(duration)) {
-      query.installmentYears = { $lte: duration };
+      query.installmentYears = { $gte: duration };
     }
+
   }
+
+  console.log("FILTER QUERY:", query);
 
   return await Project.find(query);
 };
