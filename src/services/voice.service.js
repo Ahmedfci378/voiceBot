@@ -91,7 +91,7 @@ exports.handleUserMessage = async (sessionId, message) => {
 
 
     console.log("SESSION:", sessionId);
-console.log("CURRENT STAGE:", memory.getStage(sessionId));
+    console.log("CURRENT STAGE:", memory.getStage(sessionId));
   try {
 
     if (!message?.trim()) {
