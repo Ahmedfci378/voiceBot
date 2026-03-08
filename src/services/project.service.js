@@ -7,6 +7,6 @@ exports.getActiveProjects = async () => {
 exports.getProjectByGoal = async (goal) => {
   return await Project.find({
     type: goal,
-    active: true
+    status: "available"
   });
 };
