@@ -109,7 +109,7 @@ console.log("CURRENT STAGE:", memory.getStage(sessionId));
     ==========================*/
     if (stage === "intro") {
 
-      response = "مرحبًا 👋 هل تبحث عن سكن أم استثمار؟";
+      response = "مرحبًا 👋، معك ممثل من شركة بالم هيلز، إحدى أكبر شركات التطوير العقاري. هل تبحث عن سكن أم استثمار؟";
 
       memory.setStage(sessionId, "qualification");
     }
@@ -117,65 +117,147 @@ console.log("CURRENT STAGE:", memory.getStage(sessionId));
     /* =========================
        🎭 STAGE: QUALIFICATION
     ==========================*/
-   else if (stage === "qualification") {
+  else if (stage === "qualification") {
 
-  console.log("MESSAGE RECEIVED:", message);
-  console.log("TYPE:", typeof message);
-
+  const subStage = memory.getSubStage(sessionId);
   const text = String(message).trim().toLowerCase();
 
-  console.log("TEXT AFTER CLEAN:", text);
-  if (text.includes("استثمار")) {
+  // لو لسه ما حددش هدف
+  if (!memory.getGoal(sessionId)) {
 
-    memory.setGoal(sessionId, "investment");
+    if (text.includes("استثمار")) {
+      memory.setGoal(sessionId, "investment");
+      memory.setSubStage(sessionId, "ask_location");
 
-    const projects = await getProjectByGoal("investment");
-
-    if (projects.length) {
-      const project = projects[0];
-
-      response = `
-    🏗 المشروع: ${project.name}
-    📍 الموقع: ${project.location}
-
-    💰 يبدأ من ${project.startingPrice?.toLocaleString()} جنيه
-    📆 تقسيط حتى ${project.installmentYears} سنوات
+      response = "تمام 👍، تحب المشروع يكون في أي منطقة؟";
+    } 
     
-    تحب تفاصيل أكتر ولا نكمل؟
+    else if (text.includes("سكن")) {
+      memory.setGoal(sessionId, "residential");
+      memory.setSubStage(sessionId, "ask_location");
 
-    `;
-      memory.setStage(sessionId, "followup");
+      response = "تمام 👍، تحب المشروع يكون في أي منطقة؟";
+    } 
+    
+    else {
+      response = "ممكن تقولّي تحب سكن ولا استثمار؟";
     }
 
-  } 
-  else if (text.includes("سكن")) {
+  }
 
-    memory.setGoal(sessionId, "residential");
+  // بعد ما حددنا الهدف، نبدأ الأسئلة التفصيلية
+  else {
 
-    const projects = await getProjectByGoal("residential");
+    const goal = memory.getGoal(sessionId);
 
-    if (projects.length) {
-      const project = projects[0];
+    // نضمن وجود preferences
+    let prefs = memory.getPreferences(sessionId) || {};
 
-      response = `
+    switch (subStage) {
+
+        case "ask_location":
+
+      if (
+        text.includes("لا") ||
+        text.includes("مش") ||
+        text.includes("شكرا") ||
+        text.includes("خلاص")
+      ) {
+
+        response = "تمام 👍 لو حبيت ترجع تدور على مشروع تاني أنا موجود.";
+
+        memory.setStage(sessionId, "end");
+        memory.setSubStage(sessionId, null);
+
+        break;
+      }
+
+      prefs.location = text;
+      memory.setPreferences(sessionId, prefs);
+
+      memory.setSubStage(sessionId, "ask_budget");
+
+      response = "حلو 😃، تحب يبدأ السعر من كام تقريبًا؟";
+
+      break;
+
+      case "ask_budget":
+
+        prefs.budget = text;
+        memory.setPreferences(sessionId, prefs);
+
+        memory.setSubStage(sessionId, "ask_duration");
+
+        response = "تمام، تقسيط المدة تحب تكون قد إيه؟";
+
+        break;
+
+      case "ask_duration":
+
+        prefs.duration = text;
+        memory.setPreferences(sessionId, prefs);
+
+        const projects = await getProjectByGoal(goal, prefs);
+
+        if (projects && projects.length > 0) {
+
+          const project = projects[0];
+
+          response = `
       🏗 المشروع: ${project.name}
       📍 الموقع: ${project.location}
 
-    💰 يبدأ من ${project.startingPrice?.toLocaleString()} جنيه
-    📆 تقسيط حتى ${project.installmentYears} سنوات
-   تحب تفاصيل أكتر ولا نكمل؟
+      💰 يبدأ من ${project.startingPrice?.toLocaleString()} جنيه
+      📆 تقسيط حتى ${project.installmentYears} سنوات
 
-    `;
-      memory.setStage(sessionId, "followup");
+      تحب تفاصيل أكتر ولا نكمل؟
+      `;
+
+          memory.setStage(sessionId, "followup");
+          memory.setSubStage(sessionId, null);
+
+        } 
+        
+        else {
+
+      if (
+        text.includes("لا") ||
+        text.includes("مش") ||
+        text.includes("شكرا") ||
+        text.includes("خلاص")
+      ) {
+
+    response = "تمام 👍 لو حبيت ترجع تدور على مشروع تاني أنا موجود.";
+
+    memory.setStage(sessionId, "end");
+    memory.setSubStage(sessionId, null);
+
+    } 
+        else {
+
+          response = "مفيش مشاريع متاحة حسب اختياراتك 😔، تحب نجرب منطقة تانية؟";
+
+          memory.setSubStage(sessionId, "ask_location");
+
+        }
+
+      }
+
+        break;
+
+      default:
+
+        // fallback لو subStage ضاعت لأي سبب
+        memory.setSubStage(sessionId, "ask_location");
+
+        response = "تحب المشروع يكون في أي منطقة؟";
+
+        break;
     }
 
-  } 
-  else {
-
-    response = "ممكن تقولّي تحب سكن ولا استثمار؟";
   }
-}
 
+}
   /* =========================
    🎭 STAGE: FOLLOWUP
 =========================*/

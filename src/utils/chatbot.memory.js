@@ -16,6 +16,8 @@ function getSession(sessionId) {
     sessions.set(sessionId, {
       messages: [],
       stage: "intro",
+      preferences: {},
+      subStage: null,
       goal: null
     });
   }
@@ -62,6 +64,22 @@ function clearSession(sessionId) {
   sessions.delete(sessionId);
 }
 
+function setSubStage(sessionId, subStage) {
+  getSession(sessionId).subStage = subStage;
+}
+
+function getSubStage(sessionId) {
+  return getSession(sessionId).subStage;
+}
+function getPreferences(sessionId) {
+  return getSession(sessionId).preferences;
+}
+
+function setPreferences(sessionId, prefs) {
+  getSession(sessionId).preferences = prefs;
+}
+    
+
 module.exports = {
   getSession,
   addMessage,
@@ -70,5 +88,9 @@ module.exports = {
   setStage,
   getGoal,
   setGoal,
-  clearSession
+  getSubStage,
+  setSubStage,
+  clearSession,
+  getPreferences,
+  setPreferences
 };
