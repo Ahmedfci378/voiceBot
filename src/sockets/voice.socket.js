@@ -25,6 +25,22 @@ module.exports = (io) => {
     });
   }
 });
+socket.on("new_chat", ({ sessionId }) => {
+  // لو المستخدم بعت sessionId نستعمله، لو لأ نستخدم socket.id
+  const id = sessionId || socket.id;
+
+  // مسح الـ session القديم
+  const memory = require("../utils/chatbot.memory");
+  memory.clearSession(id);
+
+  // إرسال تأكيد للـ frontend
+  socket.emit("chat_reset", {
+    message: "تم بدء محادثة جديدة ✅",
+    sessionId: id
+  });
+
+  console.log("🔄 New chat started for session:", id);
+});
 
     });
 
