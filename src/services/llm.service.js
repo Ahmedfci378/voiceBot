@@ -1,33 +1,114 @@
 const OpenAI = require("openai");
-const Project = require("../models/project.model"); // أو أي DB عندك
+const Project = require("../models/project.model");
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-async function getResponse(userText) {
-  // 1️⃣ نجيب المشاريع أو البيانات حسب الحاجة
-  const projects = await Project.find({});
-
-  let contextText = projects.length
-    ? projects.map(p => `المشروع: ${p.name}, الموقع: ${p.location}, السعر يبدأ من ${p.startingPrice} جنيه`).join("\n")
-    : "";
-
-  // 2️⃣ نحدد system prompt
-  let systemPrompt = contextText
-    ? `أنت مساعد ذكي بالعربية. استخدم المعلومات التالية للرد فقط:\n${contextText}`
-    : `أنت مساعد ذكي بالعربية. لا يوجد سياق محدد من قاعدة البيانات. حاول الرد بطريقة ودية ومفهومة للمستخدم.`
-
-  // 3️⃣ نعمل طلب للـ OpenAI
+async function detectIntent(userText) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userText }
+      {
+        role: "system",
+        content: `
+حدد نوع السؤال فقط من الاختيارات التالية:
+real_estate_query
+general_chat
+
+أرجع الكلمة فقط.
+`,
+      },
+      {
+        role: "user",
+        content: userText,
+      },
     ],
-    temperature: 0.7,
-    max_tokens: 200,
+    temperature: 0,
+    max_tokens: 10,
   });
 
-  return completion.choices[0].message.content.trim();
+  return completion.choices[0].message.content.trim().toLowerCase();
+}
+
+async function getResponse(userText) {
+
+  const intent = await detectIntent(userText);
+
+  // لو السؤال عن المشاريع
+  if (intent === "real_estate_query") {
+
+    const projects = await Project.find({});
+
+    // لو مفيش مشاريع
+    if (!projects || projects.length === 0) {
+      return "لا توجد مشاريع متاحة حالياً في قاعدة البيانات.";
+    }
+
+    const context = projects
+      .map(
+        (p) =>
+          `المشروع: ${p.name},
+الموقع: ${p.location},
+السعر يبدأ من: ${p.startingPrice} جنيه,
+مدة التقسيط: ${p.installmentYears} سنوات,
+الوصف: ${p.description}`
+      )
+      .join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `
+أنت مساعد عقاري ذكي.
+
+مهمتك مساعدة المستخدم في معرفة تفاصيل المشاريع العقارية.
+
+يمكنك الإجابة عن:
+- السعر
+- الموقع
+- مدة التقسيط
+- وصف المشروع
+
+استخدم البيانات التالية فقط للإجابة على أسئلة المستخدم.
+
+لو كانت الإجابة موجودة في البيانات قم بعرضها بوضوح.
+لو لم تكن موجودة أخبر المستخدم أن هذه المعلومة غير متوفرة.
+
+البيانات:
+${context}
+`,
+        },
+        {
+          role: "user",
+          content: userText,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    return completion.choices[0].message.content;
+  }
+
+  // لو كلام عادي
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "أنت مساعد ذكي تتحدث العربية بشكل طبيعي.",
+      },
+      {
+        role: "user",
+        content: userText,
+      },
+    ],
+  });
+
+  return completion.choices[0].message.content;
 }
 
 module.exports = { getResponse };
