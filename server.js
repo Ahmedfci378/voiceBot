@@ -24,7 +24,7 @@ const server = http.createServer(app);
 // ==========================
 const allowedOrigin =
   process.env.NODE_ENV === "production"
-    ? "https://your-deployment-domain.com" // لينك الديبولويمنت
+    ? "https://voice-bot-front.vercel.app/" // لينك الديبولويمنت
     : "http://localhost:3001";           // لينك التطوير المحلي
 
 const io = new Server(server, {

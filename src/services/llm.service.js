@@ -6,18 +6,46 @@ const openai = new OpenAI({
 });
 
 async function detectIntent(userText) {
+
+const lowerText = userText.toLowerCase();
+const bookingKeywords = [
+  "احجز",
+  "حجز",
+  "احجز المشروع",
+  "عايز احجز",
+  "اريد الحجز",
+  "ممكن احجز"
+];
+
+const callbackKeywords = [
+  "اتصل بيا",
+  "كلموني",
+  "عايز حد يكلمني",
+  "عايز تليفون",
+  "ممكن حد يتواصل"
+];
+
+if (bookingKeywords.some(k => lowerText.includes(k))) {
+  return "booking_request";
+}
+
+if (callbackKeywords.some(k => lowerText.includes(k))) {
+  return "callback_request";
+}
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
         content: `
-حدد نوع السؤال فقط من الاختيارات التالية:
-real_estate_query
-general_chat
+    حدد نوع السؤال فقط من الاختيارات التالية:
+    real_estate_query
+    general_chat
+    booking_request
+    callback_request
 
-أرجع الكلمة فقط.
-`,
+    أرجع الكلمة فقط.
+    `,
       },
       {
         role: "user",
@@ -35,11 +63,32 @@ async function getResponse(userText) {
 
   const intent = await detectIntent(userText);
 
+  if (intent === "booking_request") {
+
+  // هنا ممكن تسجل الطلب في DB
+  // مثال بسيط
+  // await Booking.create({ userMessage: userText });
+
+  return "تمام 👍 سجلت طلب الحجز. ممكن تسيب رقم تليفونك علشان فريق المبيعات يتواصل معك؟";
+}
+
+if (intent === "callback_request") {
+
+  return "أكيد 👍 ممكن تكتب رقم تليفونك وسيتواصل معك أحد ممثلي المبيعات قريبًا.";
+}
+
   // لو السؤال عن المشاريع
   if (intent === "real_estate_query") {
 
-    const projects = await Project.find({});
+let cachedProjects = null;
 
+async function getProjects() {
+  if (!cachedProjects) {
+    cachedProjects = await Project.find({});
+  }
+  return cachedProjects;
+}
+const projects = await getProjects();
     // لو مفيش مشاريع
     if (!projects || projects.length === 0) {
       return "لا توجد مشاريع متاحة حالياً في قاعدة البيانات.";
@@ -49,11 +98,11 @@ async function getResponse(userText) {
       .map(
         (p) =>
           `المشروع: ${p.name},
-الموقع: ${p.location},
-السعر يبدأ من: ${p.startingPrice} جنيه,
-مدة التقسيط: ${p.installmentYears} سنوات,
-الوصف: ${p.description}`
-      )
+        الموقع: ${p.location},
+        السعر يبدأ من: ${p.startingPrice} جنيه,
+        مدة التقسيط: ${p.installmentYears} سنوات,
+        الوصف: ${p.description}`
+            )
       .join("\n");
 
     const completion = await openai.chat.completions.create({
@@ -61,25 +110,24 @@ async function getResponse(userText) {
       messages: [
         {
           role: "system",
-          content: `
-أنت مساعد عقاري ذكي.
+        content: `
+        أنت مساعد عقاري مصري.
 
-مهمتك مساعدة المستخدم في معرفة تفاصيل المشاريع العقارية.
+        اتكلم باللهجة المصرية الدارجة بشكل طبيعي وبسيط.
+        خلي ردودك قصيرة وواضحة وكأنك بتكلم عميل في التليفون.
 
-يمكنك الإجابة عن:
-- السعر
-- الموقع
-- مدة التقسيط
-- وصف المشروع
+        مهمتك تساعد المستخدم يعرف تفاصيل المشاريع العقارية مثل:
+        - السعر
+        - الموقع
+        - مدة التقسيط
+        - وصف المشروع
 
-استخدم البيانات التالية فقط للإجابة على أسئلة المستخدم.
+        لو المعلومة موجودة في البيانات استخدمها في الرد.
+        لو مش موجودة قول للمستخدم بشكل طبيعي إن المعلومة دي مش متوفرة دلوقتي.
 
-لو كانت الإجابة موجودة في البيانات قم بعرضها بوضوح.
-لو لم تكن موجودة أخبر المستخدم أن هذه المعلومة غير متوفرة.
-
-البيانات:
-${context}
-`,
+        البيانات:
+        ${context}
+        `,
         },
         {
           role: "user",
@@ -87,7 +135,7 @@ ${context}
         },
       ],
       temperature: 0.7,
-      max_tokens: 200,
+      max_tokens: 120,
     });
 
     return completion.choices[0].message.content;
@@ -99,8 +147,11 @@ ${context}
     messages: [
       {
         role: "system",
-        content: "أنت مساعد ذكي تتحدث العربية بشكل طبيعي.",
-      },
+        content: `
+        أنت مساعد ذكي مصري.
+        اتكلم باللهجة المصرية الدارجة وبأسلوب ودي وبسيط.
+        خلي ردودك قصيرة وطبيعية زي كلام الناس في مصر.
+        `      },
       {
         role: "user",
         content: userText,
@@ -109,6 +160,8 @@ ${context}
   });
 
   return completion.choices[0].message.content;
+
+
 }
 
 module.exports = { getResponse };
