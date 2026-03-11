@@ -4,7 +4,7 @@ const cors = require("cors");
 const voiceRoutes = require("./routes/voice.routes");
 const outboundRoutes = require("./routes/outbound.routes");
 const projectsRoutes = require("./routes/projects.routes");
-
+const conversationRoutes = require("./routes/conversation.routes");
 const OpenAI = require("openai");
 const callRoutes = require("./routes/call.routes");
 
@@ -52,7 +52,7 @@ app.use("/api/voice", voiceRoutes);
 
 app.use("/api/outbound", outboundRoutes);
 
-
+app.use("/api/conversations", conversationRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/projects", projectsRoutes);
 
