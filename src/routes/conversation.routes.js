@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Conversation = require("../models/conversation.model");
 
-router.get("/:sessionId", async (req, res) => {
+router.get("/", async (req, res) => {
 
   try {
 
