@@ -4,7 +4,6 @@ const cors = require("cors");
 const voiceRoutes = require("./routes/voice.routes");
 const outboundRoutes = require("./routes/outbound.routes");
 const projectsRoutes = require("./routes/projects.routes");
-const mongoose = require("mongoose");
 
 const OpenAI = require("openai");
 const callRoutes = require("./routes/call.routes");
@@ -45,9 +44,6 @@ app.use(cors({
 
 /* =============================== */
 
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch((err) => console.error("MongoDB Error:", err));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -60,16 +56,7 @@ app.use("/api/outbound", outboundRoutes);
 app.use("/api/calls", callRoutes);
 app.use("/api/projects", projectsRoutes);
 
-// app.all("/api/voice", (req, res) => {
-//   res.type("text/xml");
-//   res.send(`
-//     <Response>
-//       <Say voice="alice">
-//         Webhook is working.
-//       </Say>
-//     </Response>
-//   `);
-// });
+
 
 app.get("/ai-test", async (req, res) => {
   try {
