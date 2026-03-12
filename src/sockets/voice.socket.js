@@ -53,7 +53,33 @@ function setupSockets(server, allowedOrigin) {
       }
     });
 
+    socket.on("audio_message", async ({ sessionId, audioBuffer }) => {
+  try {
+    // 1️⃣ نفك الـ ArrayBuffer لو جاي من Frontend
+    const buffer = Buffer.from(audioBuffer);
+
+    // 2️⃣ نفريغ الصوت باستخدام Whisper
+    const text = await sttService.transcribeAudio(buffer);
+
+    // 3️⃣ حفظ الرسالة
+    await conversationService.saveMessage(sessionId, "user", text);
+
+    // 4️⃣ التعامل مع LLM
+    const llmResponse = await llmService.getResponse(text);
+    await conversationService.saveMessage(sessionId, "assistant", llmResponse);
+
+    const ttsAudio = await ttsService.synthesizeSpeech(llmResponse);
+
+    socket.emit("bot_audio", ttsAudio.buffer);
+    socket.emit("bot_response", { message: llmResponse });
+  } catch (err) {
+    console.error(err);
+    socket.emit("bot_audio", null);
+  }
+});
+    
   });
+  
 
 }
 
