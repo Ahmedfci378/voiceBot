@@ -53,13 +53,15 @@ function setupSockets(server, allowedOrigin) {
       }
     });
 
-    socket.on("audio_message", async ({ sessionId, audioBuffer }) => {
+ socket.on("audio_message", async ({ sessionId, audioBuffer }) => {
   try {
     // 1️⃣ نفك الـ ArrayBuffer لو جاي من Frontend
     const buffer = Buffer.from(audioBuffer);
 
     // 2️⃣ نفريغ الصوت باستخدام Whisper
     const text = await sttService.transcribeAudio(buffer);
+
+        socket.emit("bot_response", { message: text, role: "user" });
 
     // 3️⃣ حفظ الرسالة
     await conversationService.saveMessage(sessionId, "user", text);
